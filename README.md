@@ -18,7 +18,7 @@ program can be started with the command:
 - in Windows: python main.py
 - in Linux: python3 main.py
 
-Versions built for Windows or Linux have an executable with the name "SESEuPy"
+Versions built for Windows or Linux have an executable with the name "SESMoPy"
 in the program directory.
 
 CHANGELOG
