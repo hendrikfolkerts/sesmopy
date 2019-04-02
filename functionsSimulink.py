@@ -38,6 +38,9 @@ class functionsSimulink():
             sinkBlock = modelname + "/" +cpl[2]
             fileobject.write("phFrom = get_param('"+sourceBlock+"','PortHandles');\n")
             fileobject.write("phTo = get_param('" + sinkBlock + "','PortHandles');\n")
+
+            #old way -> not for several simulators
+            """
             #Problem: ports are given as numbers in SES, but Simulink has two lists of numbers for normal ports and entity ports.
             #Simple solution: SES portnames in couplings have the form 'XN' for normal ports and 'CN' for entity ports (where N is an integer and X is an integer != "C", X is optional).
             sourcePort = cpl[1]
@@ -64,5 +67,39 @@ class functionsSimulink():
                 except:
                     fileobject.close()
                     return 1
+            """
+
+            #new way -> get the portnumber to a portname -> portnames do not need to be integres
+            sourcePort = cpl[1]
+            sinkPort = cpl[3]
+            try:
+                #for the source -> out port
+                fileobject.write("simBlockHandle = get_param('" + sourceBlock + "','Handle');\n")
+                fileobject.write("outportHandles = find_system(simBlockHandle, 'LookUnderMasks', 'on', 'FollowLinks', 'on', 'SearchDepth', 2, 'BlockType', 'Outport');\n")
+                fileobject.write("outNames = get_param(outportHandles, 'Name');\n")
+                fileobject.write("outPorts = get_param(outportHandles, 'Port');\n")
+                fileobject.write("if iscell(outNames)\n")
+                fileobject.write("idx = find(ismember(outNames, '" + sourcePort + "'));\n")
+                fileobject.write("pno = str2num(outPorts{idx});\n")
+                fileobject.write("else\n")
+                fileobject.write("pno = str2num(outPorts);\n")
+                fileobject.write("end\n")
+                #for the sink -> in port
+                fileobject.write("simBlockHandle = get_param('" + sinkBlock + "','Handle');\n")
+                fileobject.write("inportHandles = find_system(simBlockHandle, 'LookUnderMasks', 'on', 'FollowLinks', 'on', 'SearchDepth', 2, 'BlockType', 'Inport');\n")
+                fileobject.write("inNames = get_param(inportHandles, 'Name');\n")
+                fileobject.write("inPorts = get_param(inportHandles, 'Port');\n")
+                fileobject.write("if iscell(inNames)\n")
+                fileobject.write("idx = find(ismember(inNames, '" + sinkPort + "'));\n")
+                fileobject.write("pni = str2num(inPorts{idx});\n")
+                fileobject.write("else\n")
+                fileobject.write("pni = str2num(inPorts);\n")
+                fileobject.write("end\n")
+                #now draw the line
+                fileobject.write("add_line('" + modelname + "', phFrom.Outport(pno), phTo.Inport(pni), 'autorouting', 'on');\n")
+            except:
+                fileobject.close()
+                return 1
+
         fileobject.close()
         return 0
