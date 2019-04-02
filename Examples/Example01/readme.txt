@@ -1,0 +1,1 @@
+copy the MB for the simulator to use in this folder to the .jsonsestree file
