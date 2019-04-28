@@ -6,7 +6,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, QThread
 from time import strftime
 import os
 from pathlib import Path
@@ -36,31 +36,121 @@ python main.py -h
 from main_ui import Ui_MainWindow
 
 class Main(QtWidgets.QMainWindow, Ui_MainWindow):
-    
+
+    #signals
+    parameters = pyqtSignal(list, list, list, str, str, str)
+
     #initialize
     def __init__(self, parent=None):
-        QtWidgets.QMainWindow.__init__(self, parent)
+        #QtWidgets.QMainWindow.__init__(self, parent)
+        super(Main, self).__init__()
+
+        ##################################################
+        # execute the modelbuilder in an own thread -> as seen when starting the thread in the buildModel function,
+        # a thread is only started if called from UI
+
+        # create objects
+        self.moBuThread = QThread()
+        self.moBuObj = modelBuilder()                           # create an instance of the class modelBuilder
+
+        # move modelbuilder object to thread
+        self.moBuObj.moveToThread(self.moBuThread)
+
+        # connect modelbuilder signals to slots in this class
+        self.moBuObj.statusUpdate.connect(self.onStatusUpdate)  # the function onStatusUpdate is a slot in this class
+
+        # connect modelbuilder signals to slots in this class -> the function onModelCreated contains a slot of the thread object (self.moBuThread.quit)
+        self.moBuObj.finished.connect(self.onModelCreated)  # the function onModelCreated is a slot in this class
+
+        # connect thread started signal to modelbuilder's slot
+        # pass parameters as well: if you want to "pass parameters to QThread", then it's quite straightforward.
+        # 1. You can access member variable of your subclass from any methods of your subclass.
+        # 2. The slot of your worker object, that will be executed in another thread can take as many argument as you want.
+        # 3. Use a lambda function: self.moBuThread.started.connect(lambda: self.moBuObj.build(objects, nodesWithoutMbAttribute, couplings, modelname, self.modelfolderpathname, fpesfilepath))
+        # Just for information: if build was executed in the main thread: modelCreated = self.moBuObj.build(self, objects, nodesWithoutMbAttribute, couplings, modelname, modelfolderpathname, fpesfilepath)  # execute the build method (in the same thread)
+        # Here the first method is used: The build method of the modelbuilder object is called without arguments, when the thread is started the build function waits until it receives data.
+        # The data is set directly after the thread is started (when the data is available, see "set data for the modelbuilder thread").
+        self.moBuThread.started.connect(self.moBuObj.build)
+
+        ###################################################
+
         self.setupUi(self)
 
-        #signals
+        #ui signals
         self.bselectfpesfile.clicked.connect(self.selectFPES)
         self.bbuildmodel.clicked.connect(self.buildModel)
         self.bdoc.clicked.connect(self.documentation)
+
+    #slot
+    #when the modelbuilder is finished, this function is called
+    def onModelCreated(self, i):
+        #when the thread has finished, quit it
+        self.moBuThread.quit()
+        modelCreated = i
+        if modelCreated == 0:
+            if self.calledFromUi:
+                QMessageBox.information(None, "Model(s) created", "The model(s) was/were created in the folder \"%s\" (a subdirectory of the folder in which \"%s\" lies)." % (self.modelfolderpathname, self.selectedfpesfile), QtWidgets.QMessageBox.Ok)
+            else:
+                print("\n")
+                print("OK - The model(s) was/were created in the \nMODELFOLDER: \"" + self.modelfolderpathname + "\"\nThis is a subdirectory of the folder in which \"" + self.selectedfpesfile + "\" lies.")
+                print("\n")
+        elif modelCreated == 1:
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The simulator or interface is not supported. Please refer to the documentation for simulators and the interface.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be created. The simulator or interface is not supported. Please refer to the documentation for simulators and the interface.")
+        elif modelCreated == 2:
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The portnames for the basic models are not okay. Please refer to the documentation.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be created. The portnames for the basic models are not okay. Please refer to the documentation.")
+        elif modelCreated == 3:
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation). Using FMI there could also be a problem parameterizing the MB.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation).")
+        elif modelCreated == 4:
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. A parametervalue to vary could not be interpreted as a Python variable.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be created. A parametervalue to vary could not be interpreted as a Python variable.")
+        elif modelCreated == 5:
+            QMessageBox.warning(None, "Model(s) not imported in the simulator", "The model(s) could not be imported in the simulator. The simulator could not be found. Please make sure it is accessible via Shell/Command.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be imported in the simulator. The simulator could not be found. Please make sure it is accessible via Shell/Command.")
+        elif modelCreated == 6:
+            QMessageBox.warning(None, "FMUs not created", "The FMUs could not be created. OpenModelica is necessary for creating FMUs. Please make sure OpenModelica's omc executable is accessible via Shell/Command.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The FMUs could not be created. OpenModelica is necessary for creating FMUs. Please make sure OpenModelica's omc executable is accessible via Shell/Command.")
+        elif modelCreated == 7:
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. An old model directory could not be removed automatically. Please make sure no model directory is in the same directory as the FPES.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be created. An old model directory could not be removed automatically. Please make sure no model directory is in the same directory as the FPES.")
+        #if called from ui, the build model button needs to be activated again and clear the status
+        if self.calledFromUi:
+            self.bbuildmodel.setEnabled(True)
+            self.lstatustext.setText("")
+
+    #slot
+    #show the statusmessage from the thread
+    def onStatusUpdate(self, message):
+        if self.calledFromUi:   #update the UI
+            self.lstatustext.setText(message)
+        else:
+            print(message + "\n")
 
     def selectFPES(self):
         fname = QFileDialog.getOpenFileName(self, "Open an FPES from JSON", '', "FPES SES Tree (*.jsonsestree);;All files (*)")
         self.leselectedfpesfile.setText(fname[0])
 
     def buildModel(self, selectedfpesfile="", calledFromUi=True):
+        #make variables class variables
+        self.calledFromUi = calledFromUi
+
+        #deactivate the build model button
+        if self.calledFromUi:
+            self.bbuildmodel.setEnabled(False)
+
         try:
             # get the fpesfile
-            if calledFromUi:    #if the modelbuilder was called from the UI
-                selectedfpesfile = self.leselectedfpesfile.text()
+            if self.calledFromUi:    #if the modelbuilder was called from the UI
+                self.selectedfpesfile = self.leselectedfpesfile.text()
+            else:
+                self.selectedfpesfile = selectedfpesfile
 
             # only if a file is selected
-            if selectedfpesfile != "":
+            if self.selectedfpesfile != "":
                 # read file
-                f = open(selectedfpesfile, "r")
+                f = open(self.selectedfpesfile, "r")
                 filestr = f.read()
                 f.close()
                 readJsonObj = readJson  #create an instance of the class readJson
@@ -68,61 +158,69 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
                 #only if the file is okay and an FPES
                 if okay and sespes[0][0] == "fpes" and len(nodelist) > 0:
                     #read the FPES file
-                    objects, couplings, nodesWithOutMbAttribute = readJsonObj.readFPES(self, nodelist)
+                    objects, couplings, nodesWithoutMbAttribute = readJsonObj.readFPES(self, nodelist)
                     if objects:
-                        print("The nodes\n" + ",\n".join(nodesWithOutMbAttribute) + "\nhave no MB-Attribute. Are their attributes needed for the simulation? This is just a hint in case of searching for a mistake.\n")
+                        print("The nodes\n" + ",\n".join(nodesWithoutMbAttribute) + "\nhave no MB-Attribute. Are their attributes needed for the simulation? This is just a hint in case of searching for a mistake.\n")
                         #get a name for the folder including the path, in which the models are created -> it shall get the name of the FPES .jsonsestree file
-                        fpesfilepathname, fpesfileext = os.path.splitext(selectedfpesfile)
-                        modelfolderpathname = fpesfilepathname + "_models"
+                        fpesfilepathname, fpesfileext = os.path.splitext(self.selectedfpesfile)
+                        self.modelfolderpathname = fpesfilepathname + "_models"
                         #get a name for the model -> it shall get the name of the FPES .jsonsestree file
                         modelname = os.path.basename(fpesfilepathname) + "_model"
-                        #get the path and names of the modelbases -> they shall lie in the same directory as the FPES .jsonsestree file and the fileending depends on the simulator
-                        fpesfilepath = os.path.split(selectedfpesfile)[0]   #get the path to the modelbase from the fpesfile
-                        mblinks = []
-                        for ob in objects:      #get the filenames of the modelbases from the mb-attributes
-                            #mblinks.append(os.path.split(ob[1])[0].replace("/", ""))   #only the first part before / determines the MB -> for native models it is like that -> in the modelBuilder object now
-                            mblinks.append(ob[1])
-                        mblinks = list(set(mblinks))
-                        #modelbaselinkspathname = [os.path.join(fpesfilepath, mblink) for mblink in mblinks]  #the modelbasefilepathname has no ending yet
-                        #get the attributes of the nodes without MB-Attribute from the nodelist (they may be necessary for the simulator configuration)
-                        #execute the modelbuilder
-                        moBuObj = modelBuilder #create an instance of the class modelBuilder
-                        modelCreated = moBuObj.build(self, objects, nodesWithOutMbAttribute, couplings, modelname, modelfolderpathname, fpesfilepath, mblinks)   #execute the build method
-                        if modelCreated == 0:
-                            if calledFromUi:
-                                QMessageBox.information(None, "Model(s) created", "The model(s) was/were created in the folder \"%s\" (a subdirectory of the folder in which \"%s\" lies)." % (modelfolderpathname, selectedfpesfile), QtWidgets.QMessageBox.Ok)
-                            else:
-                                print("\n")
-                                print("OK - The model(s) was/were created in the \nMODELFOLDER: \""+modelfolderpathname+"\"\nThis is a subdirectory of the folder in which \""+selectedfpesfile+"\" lies.")
-                                print("\n")
-                        elif modelCreated == 1:
-                            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The simulator or interface is not supported. Please refer to the documentation for simulators and the interface.", QtWidgets.QMessageBox.Ok)
-                            print("Not OK - The model(s) could not be created. The simulator or interface is not supported. Please refer to the documentation for simulators and the interface.")
-                        elif modelCreated == 2:
-                            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The portnames for the basic models are not okay. Please refer to the documentation.", QtWidgets.QMessageBox.Ok)
-                            print("Not OK - The model(s) could not be created. The portnames for the basic models are not okay. Please refer to the documentation.")
-                        elif modelCreated == 3:
-                            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation).", QtWidgets.QMessageBox.Ok)
-                            print("Not OK - The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation).")
-                        elif modelCreated == 4:
-                            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. A parametervalue to vary could not be interpreted as a Python variable.", QtWidgets.QMessageBox.Ok)
-                            print("Not OK - The model(s) could not be created. A parametervalue to vary could not be interpreted as a Python variable.")
+                        #get the path of the selected FPES .jsonsestree file
+                        fpesfilepath = os.path.split(self.selectedfpesfile)[0]   #get the path to the modelbase from the fpesfile
+
+                        #set data for the modelbuilder object
+                        self.moBuObj.objects = objects
+                        self.moBuObj.nodesWithoutMbAttribute = nodesWithoutMbAttribute
+                        self.moBuObj.couplings = couplings
+                        self.moBuObj.modelname = modelname
+                        self.moBuObj.modelfolderpathname = self.modelfolderpathname
+                        self.moBuObj.fpesfilepath = fpesfilepath
+
+                        #if called from ui: start the modelbuilder thread
+                        #if called from shell: start the build function (not in an own thread)
+                        if self.calledFromUi:
+                            self.moBuThread.start()
+                        else:
+                            self.moBuObj.build()
+
                     elif not objects:
                         QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. Objects cannot be created from the nodelist.", QtWidgets.QMessageBox.Ok)
                         print("Not OK - The model(s) could not be created. Objects cannot be created from the nodelist.")
+                        # if called from ui, the build model button needs to be activated again and clear the status
+                        if self.calledFromUi:
+                            self.bbuildmodel.setEnabled(True)
+                            self.lstatustext.setText("")
                     else:
-                        nWoMbA = ', '.join(nodesWithOutMbAttribute)
+                        nWoMbA = ', '.join(nodesWithoutMbAttribute)
                         QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The nodes \"%s\" do not have an mb-attribute." % nWoMbA, QtWidgets.QMessageBox.Ok)
                         print("Model(s) not created", "The model(s) could not be created. The nodes \"" + nWoMbA + "\" do not have an mb-attribute.")
+                        # if called from ui, the build model button needs to be activated again and clear the status
+                        if self.calledFromUi:
+                            self.bbuildmodel.setEnabled(True)
+                            self.lstatustext.setText("")
                 else:
                     QMessageBox.warning(None, "Can not read file", "The file \"%s\" seems not to contain an FPES. Please open this file in SESToPy, make sure it represents an FPES and that the Selector in the Information ToolBox is set to flattened PES." % selectedfpesfile, QtWidgets.QMessageBox.Ok)
-                    print("Not OK - The file \"" + selectedfpesfile + "\" seems not to contain an FPES. Please open this file in SESToPy, make sure it represents an FPES and that the Selector in the Information ToolBox is set to flattened PES.")
+                    print("Not OK - The file \"" + self.selectedfpesfile + "\" seems not to contain an FPES. Please open this file in SESToPy, make sure it represents an FPES and that the Selector in the Information ToolBox is set to flattened PES.")
+                    # if called from ui, the build model button needs to be activated again and clear the status
+                    if self.calledFromUi:
+                        self.bbuildmodel.setEnabled(True)
+                        self.lstatustext.setText("")
             else:
                 QMessageBox.information(None,  "Selection missing", "Please select an FPES .jsonsestree file.", QtWidgets.QMessageBox.Ok)
                 print("Not OK - Please select an FPES .jsonsestree file.")
+                # if called from ui, the build model button needs to be activated again and clear the status
+                if self.calledFromUi:
+                    self.bbuildmodel.setEnabled(True)
+                    self.lstatustext.setText("")
+
         except:
-            QMessageBox.critical(None, "Can not read file", "The file \"%s\" could not be read or there was an unknown error." % selectedfpesfile, QtWidgets.QMessageBox.Ok)
-            print("Not OK - The file \"" + selectedfpesfile + "\" could not be read or there was an unknown error.")
+            QMessageBox.critical(None, "Can not read file", "The file \"%s\" could not be read or there was an unknown error." % self.selectedfpesfile, QtWidgets.QMessageBox.Ok)
+            print("Not OK - The file \"" + self.selectedfpesfile + "\" could not be read or there was an unknown error.")
+            # if called from ui, the build model button needs to be activated again and clear the status
+            if self.calledFromUi:
+                self.bbuildmodel.setEnabled(True)
+                self.lstatustext.setText("")
 
 
 
@@ -167,4 +265,5 @@ if __name__ == "__main__":
             else:
                 print("\nBuilding using the FPES file: " + fpesfile)
                 #now build
-                Main.buildModel(Main, fpesfile, False)
+                main = Main()
+                main.buildModel(fpesfile, False)

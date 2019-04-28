@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>629</width>
-    <height>151</height>
+    <height>130</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -116,6 +116,30 @@
         <property name="icon">
          <iconset>
           <normaloff>ibook.png</normaloff>ibook.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="lstatus">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Status: </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lstatustext">
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>

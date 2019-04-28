@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(629, 151)
+        MainWindow.resize(629, 130)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("i2rightarrow.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
@@ -80,6 +80,21 @@ class Ui_MainWindow(object):
         self.bdoc.setObjectName("bdoc")
         self.hlbuildmodelhelp.addWidget(self.bdoc)
         self.vlmain.addLayout(self.hlbuildmodelhelp)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.lstatus = QtWidgets.QLabel(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lstatus.sizePolicy().hasHeightForWidth())
+        self.lstatus.setSizePolicy(sizePolicy)
+        self.lstatus.setObjectName("lstatus")
+        self.horizontalLayout.addWidget(self.lstatus)
+        self.lstatustext = QtWidgets.QLabel(self.centralwidget)
+        self.lstatustext.setText("")
+        self.lstatustext.setObjectName("lstatustext")
+        self.horizontalLayout.addWidget(self.lstatustext)
+        self.vlmain.addLayout(self.horizontalLayout)
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -93,4 +108,5 @@ class Ui_MainWindow(object):
         self.bselectfpesfile.setText(_translate("MainWindow", "Open FPES File"))
         self.bbuildmodel.setText(_translate("MainWindow", "Build Model"))
         self.bdoc.setText(_translate("MainWindow", "Documentation"))
+        self.lstatus.setText(_translate("MainWindow", "Status: "))
 
