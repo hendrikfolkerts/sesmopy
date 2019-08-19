@@ -1,5 +1,5 @@
 %init function for the model - set the parameters of the blocks
-% -> this function needs to be set as InitFcn in Simulink (Open Simulink MB.slx -> 
+% -> this function is set as InitFcn in the created model in Simulink (...model.slx -> 
 % make sure you are on the top layer, not in a subsystem -> View -> Property Inspector ->
 % Tab "Properties" -> Callbacks -> InitFcn)
 

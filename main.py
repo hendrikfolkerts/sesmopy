@@ -38,7 +38,7 @@ from main_ui import Ui_MainWindow
 class Main(QtWidgets.QMainWindow, Ui_MainWindow):
 
     #signals
-    parameters = pyqtSignal(list, list, list, str, str, str)
+    #parameters = pyqtSignal(list, list, list, str, str, str)
 
     #initialize
     def __init__(self, parent=None):
@@ -69,7 +69,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
         # 3. Use a lambda function: self.moBuThread.started.connect(lambda: self.moBuObj.build(objects, nodesWithoutMbAttribute, couplings, modelname, self.modelfolderpathname, fpesfilepath))
         # Just for information: if build was executed in the main thread: modelCreated = self.moBuObj.build(self, objects, nodesWithoutMbAttribute, couplings, modelname, modelfolderpathname, fpesfilepath)  # execute the build method (in the same thread)
         # Here the first method is used: The build method of the modelbuilder object is called without arguments, when the thread is started the build function waits until it receives data.
-        # The data is set directly after the thread is started (when the data is available, see "set data for the modelbuilder thread").
+        # The data is set directly before the thread is started (see "set data for the modelbuilder object").
         self.moBuThread.started.connect(self.moBuObj.build)
 
         ###################################################
@@ -91,7 +91,6 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
             if self.calledFromUi:
                 QMessageBox.information(None, "Model(s) created", "The model(s) was/were created in the folder \"%s\" (a subdirectory of the folder in which \"%s\" lies)." % (self.modelfolderpathname, self.selectedfpesfile), QtWidgets.QMessageBox.Ok)
             else:
-                print("\n")
                 print("OK - The model(s) was/were created in the \nMODELFOLDER: \"" + self.modelfolderpathname + "\"\nThis is a subdirectory of the folder in which \"" + self.selectedfpesfile + "\" lies.")
                 print("\n")
         elif modelCreated == 1:
@@ -101,7 +100,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
             QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The portnames for the basic models are not okay. Please refer to the documentation.", QtWidgets.QMessageBox.Ok)
             print("Not OK - The model(s) could not be created. The portnames for the basic models are not okay. Please refer to the documentation.")
         elif modelCreated == 3:
-            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation). Using FMI there could also be a problem parameterizing the MB.", QtWidgets.QMessageBox.Ok)
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder (or a subdirectory, see documentation) as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation). Using FMI there could also be a problem parameterizing the MB.", QtWidgets.QMessageBox.Ok)
             print("Not OK - The model(s) could not be created. The modelbasefile cannot be copied. Please check, that the modelbasefile is lying in the same folder as the .jsonsestree file containing the FPES. Furthermore the mb-attribute needs to refer to the modelbasefilename (see documentation).")
         elif modelCreated == 4:
             QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. A parametervalue to vary could not be interpreted as a Python variable.", QtWidgets.QMessageBox.Ok)
@@ -113,8 +112,14 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
             QMessageBox.warning(None, "FMUs not created", "The FMUs could not be created. OpenModelica is necessary for creating FMUs. Please make sure OpenModelica's omc executable is accessible via Shell/Command.", QtWidgets.QMessageBox.Ok)
             print("Not OK - The FMUs could not be created. OpenModelica is necessary for creating FMUs. Please make sure OpenModelica's omc executable is accessible via Shell/Command.")
         elif modelCreated == 7:
-            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. An old model directory could not be removed automatically. Please make sure no model directory is in the same directory as the FPES.", QtWidgets.QMessageBox.Ok)
-            print("Not OK - The model(s) could not be created. An old model directory could not be removed automatically. Please make sure no model directory is in the same directory as the FPES.")
+            QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The old model directory could not be removed automatically. For automatic remove no program may access any content of it. Please make sure no model directory is in the same directory as the FPES.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - The model(s) could not be created. An old model directory could not be removed automatically. For automatic remove no program may access any content of it. Please make sure no model directory is in the same directory as the FPES.")
+        elif modelCreated == 8:
+            QMessageBox.warning(None, "Model FMU(s) not imported in the simulator", "Model FMUs(s) could not be imported in the simulator (for OpenModelica / Dymola).", QtWidgets.QMessageBox.Ok)
+            print("Not OK - Model FMU(s) could not be imported in the simulator (for OpenModelica / Dymola).")
+        elif modelCreated == 9:
+            QMessageBox.warning(None, "Model(s) not imported in the simulator", "One FMU did not pass the compliance check. Check the statusmessage (it is reset when this message is closed)!", QtWidgets.QMessageBox.Ok)
+            print("Not OK - One FMU did not pass the compliance check. Check the statusmessage!")
         #if called from ui, the build model button needs to be activated again and clear the status
         if self.calledFromUi:
             self.bbuildmodel.setEnabled(True)
@@ -148,7 +153,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.selectedfpesfile = selectedfpesfile
 
             # only if a file is selected
-            if self.selectedfpesfile != "":
+            if self.selectedfpesfile != "" and not " " in self.selectedfpesfile:
                 # read file
                 f = open(self.selectedfpesfile, "r")
                 filestr = f.read()
@@ -207,7 +212,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
                         self.bbuildmodel.setEnabled(True)
                         self.lstatustext.setText("")
             else:
-                QMessageBox.information(None,  "Selection missing", "Please select an FPES .jsonsestree file.", QtWidgets.QMessageBox.Ok)
+                QMessageBox.information(None,  "Selection missing or the path/filename contains whitespaces", "Please select an FPES .jsonsestree file. In the name of the .jsonsestree file and the path to it no whitespaces are allowed!", QtWidgets.QMessageBox.Ok)
                 print("Not OK - Please select an FPES .jsonsestree file.")
                 # if called from ui, the build model button needs to be activated again and clear the status
                 if self.calledFromUi:
