@@ -109,7 +109,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
             QMessageBox.warning(None, "Model(s) not imported in the simulator", "The model(s) could not be imported in the simulator. The simulator could not be found. Please make sure it is accessible via Shell/Command.", QtWidgets.QMessageBox.Ok)
             print("Not OK - The model(s) could not be imported in the simulator. The simulator could not be found. Please make sure it is accessible via Shell/Command.")
         elif modelCreated == 6:
-            QMessageBox.warning(None, "FMUs not created", "The FMUs could not be created. OpenModelica is necessary for creating FMUs. Please make sure OpenModelica's omc executable is accessible via Shell/Command.", QtWidgets.QMessageBox.Ok)
+            QMessageBox.warning(None, "FMU(s) not created", "The FMU(s) could not be created. OpenModelica is necessary for creating FMU(s). Please make sure OpenModelica's omc executable is accessible via Shell/Command.", QtWidgets.QMessageBox.Ok)
             print("Not OK - The FMUs could not be created. OpenModelica is necessary for creating FMUs. Please make sure OpenModelica's omc executable is accessible via Shell/Command.")
         elif modelCreated == 7:
             QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The old model directory could not be removed automatically. For automatic remove no program may access any content of it. Please make sure no model directory is in the same directory as the FPES.", QtWidgets.QMessageBox.Ok)
@@ -120,6 +120,9 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
         elif modelCreated == 9:
             QMessageBox.warning(None, "Model(s) not imported in the simulator", "One FMU did not pass the compliance check. Check the statusmessage (it is reset when this message is closed)!", QtWidgets.QMessageBox.Ok)
             print("Not OK - One FMU did not pass the compliance check. Check the statusmessage!")
+        elif modelCreated == 10:
+            QMessageBox.warning(None, "FMU(s) not created", "Please check the FPES and the created model which shall be translated to an FMU.", QtWidgets.QMessageBox.Ok)
+            print("Not OK - FMU(s) could not be created of the model(s)! Please check the FPES and the created model which shall be translated to an FMU.")
         #if called from ui, the build model button needs to be activated again and clear the status
         if self.calledFromUi:
             self.bbuildmodel.setEnabled(True)
@@ -205,7 +208,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
                             self.bbuildmodel.setEnabled(True)
                             self.lstatustext.setText("")
                 else:
-                    QMessageBox.warning(None, "Can not read file", "The file \"%s\" seems not to contain an FPES. Please open this file in SESToPy, make sure it represents an FPES and that the Selector in the Information ToolBox is set to flattened PES." % selectedfpesfile, QtWidgets.QMessageBox.Ok)
+                    QMessageBox.warning(None, "Can not read file", "The file \"%s\" seems not to contain an FPES. Please open this file in SESToPy, make sure it represents an FPES and that the Selector in the Information ToolBox is set to flattened PES." % self.selectedfpesfile, QtWidgets.QMessageBox.Ok)
                     print("Not OK - The file \"" + self.selectedfpesfile + "\" seems not to contain an FPES. Please open this file in SESToPy, make sure it represents an FPES and that the Selector in the Information ToolBox is set to flattened PES.")
                     # if called from ui, the build model button needs to be activated again and clear the status
                     if self.calledFromUi:

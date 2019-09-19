@@ -295,7 +295,16 @@ class modelBuilder(QObject):
                                                 atro = 0
                                                 while atro < len(obj[2]):
                                                     # now insert the parameter in the text
+                                                    #adapt the syntax for OpenModelica
+                                                    addBracket = False
+                                                    if "_start" in obj[2][atro][0]:
+                                                        paramadapt = obj[2][atro][0].split("_start")
+                                                        if len(paramadapt) == 2:
+                                                            obj[2][atro][0] = "(start".join(paramadapt)
+                                                            addBracket = True
                                                     linetext = linetext + obj[2][atro][0] + "=" + obj[2][atro][1]
+                                                    if addBracket:
+                                                        linetext = linetext + ")"
                                                     # if there are more attributes, a comma is needed
                                                     if atro < len(obj[2]) - 1:
                                                         linetext = linetext + ","
@@ -439,7 +448,7 @@ class modelBuilder(QObject):
                         expfile.write('loadFile("' + modelname + '.mo");\n')
                         expfile.write('getErrorString();\n')
                         #translate to FMU
-                        expfile.write('translateModelFMU(' + modelname + ');\n')
+                        expfile.write('translateModelFMU(' + modelname + ', version = "2.0", fmuType = "me", includeResources = true);\n')
                         expfile.write('getErrorString();\n')
 
                     # -> try to execute the created script for exporting in OpenModelica (exit if OpenModelica could not be found)
@@ -474,7 +483,13 @@ class modelBuilder(QObject):
                 for filename in os.listdir(self.modelfolderpathname):
                     if filename.endswith('.fmu'):
                         modelFMUs.append(os.path.join(self.modelfolderpathname, filename))
-                    else:
+
+                if len(modelFMUs) != len(modelnames):
+                    self.finished.emit(10)
+                    return 10
+
+                for filename in os.listdir(self.modelfolderpathname):
+                    if not filename.endswith('.fmu'):
                         currentfile = os.path.join(self.modelfolderpathname, filename)
                         if not os.path.isdir(currentfile):
                             os.remove(currentfile)

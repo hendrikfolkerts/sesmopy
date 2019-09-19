@@ -209,7 +209,7 @@ class functionsSimulink():
                 #now draw the line
                 if sourceporttype in ["SPR", "SPI", "SPB"]:
                     fileobject.write("add_line('" + modelname + "', phFrom.Outport(pno), phTo.Inport(pni), 'autorouting', 'on');   %draw a connection between the now found outport and inport\n")
-                elif sourceporttype == "PP":
+                elif sourceporttype.startswith("PP"):
                     fileobject.write("add_line('" + modelname + "', phFrom.RConn(pno), phTo.LConn(pni), 'autorouting', 'on');   %draw a connection between the now found outport and inport\n")
             except:
                 fileobject.close()

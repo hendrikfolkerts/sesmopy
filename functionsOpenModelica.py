@@ -128,17 +128,75 @@ class functionsOpenModelica():
             #now write the port information
             if interface == "native":
                 couplinglines.append("  connect(" + sourceblock + "." + sourceport + ", " + sinkblock + "." + sinkport + ");\n")
-            else:
-                #append the coupling
-                couplinglines.append("  connect(" + sourceblock + "1." + sourceport + ", " + sinkblock + "1." + sinkport + ");\n")
-                #append the out block (right type) and the coupling
-                if sourceporttype == "SPR":
-                    portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+sourceport+"_Out;\n")
-                elif sourceporttype == "SPI":
-                    portblocklines.append("  Modelica.Blocks.Interfaces.IntegerOutput "+sourceblock+"_"+sourceport+"_Out;\n")
-                elif sourceporttype == "SPB":
-                    portblocklines.append("  Modelica.Blocks.Interfaces.BooleanOutput "+sourceblock+"_"+sourceport+"_Out;\n")
-                couplinglines.append("  connect("+sourceblock+"1."+sourceport+", "+sourceblock+"_"+sourceport+"_Out);\n")
+            else:   #FMI interface
+                #with signal ports append the coupling and append an Out block of the right type
+                if sourceporttype.startswith("SP"):
+                    #append the coupling
+                    couplinglines.append("  connect(" + sourceblock + "1." + sourceport + ", " + sinkblock + "1." + sinkport + ");\n")
+                    #append the out block (right type) and the coupling
+                    if sourceporttype == "SPR":
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+sourceport+"_Out;\n")
+                    elif sourceporttype == "SPI":
+                        portblocklines.append("  Modelica.Blocks.Interfaces.IntegerOutput "+sourceblock+"_"+sourceport+"_Out;\n")
+                    elif sourceporttype == "SPB":
+                        portblocklines.append("  Modelica.Blocks.Interfaces.BooleanOutput "+sourceblock+"_"+sourceport+"_Out;\n")
+                    couplinglines.append("  connect("+sourceblock+"1."+sourceport+", "+sourceblock+"_"+sourceport+"_Out);\n")
+                #physical ports have several variables in their connection: potential variables and flow variables
+                # -> the type of the coupling indicates variables there are -> which are potential variables and which are flow variables
+                # -> the value of potential variables can be put on a RealOutput block directly
+                # -> the value of flow variables can be found out by inserting a type specific indicator, the output is then put on a RealOutput block
+                #    therefore in every coupling a type specific indicator block is added
+                # e.g. the type is PPEA = PhysicalPortElectricalAnalog -> the connector is of type "Pin" and has the potential variable u (voltage) and the flow variable i (current)
+                #      -> add a RealOutput block in every connector and a currentSensor with a RealOutput block in every coupling
+                #      -> Name of the RealOutput block for potential variables: Blockname_Portname_Variable_Out, Blockname and Portname from coupling, Variable found out with getComponents(...) function
+                #      -> Name of the sensor block for flow variables: Blockname_Sensorname with the RealOutput block Blockname_Variable_Out, Blockname from coupling, Variable found out with getComponents(...) function
+                elif sourceporttype.startswith("PP"):
+                    if sourceporttype == "PPEA":
+                        #Electrical Analog: the connector is of type "Pin" and has the potential variable u (voltage) and the flow variable i (current)
+                        potVar = "v"
+                        flowVar = "i"
+                        #potential: voltage - append RealOutput blocks
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+sourceport+"_"+potVar+"_Out;\n")
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sinkblock+"_"+sinkport+"_"+potVar+"_Out;\n")
+                        #potential: voltage - append the couplings
+                        couplinglines.append("  connect("+sourceblock+"1."+sourceport+"."+potVar+", "+sourceblock+"_"+sourceport+"_"+potVar+"_Out);\n")
+                        couplinglines.append("  connect("+sinkblock+"1."+sinkport+"."+potVar+", "+sinkblock+"_"+sinkport+"_"+potVar+"_Out);\n")
+                        #flow: current - append a current sensor block and its RealOutput port
+                        portblocklines.append("  Modelica.Electrical.Analog.Sensors.CurrentSensor "+sourceblock+"1_currentSensor;\n")
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+flowVar+"_Out;\n")
+                        #flow: current - append the couplings - now two couplings with the current sensor in between and the coupling to the RealOutput
+                        ports = ["p", "n"]
+                        sensorSourceport = ports[ports.index(sourceport) - 1]
+                        sensorSinkport = sourceport
+                        couplinglines.append("  connect("+sourceblock+"1."+sourceport+", "+sourceblock+"1_currentSensor."+sensorSourceport+");\n")
+                        couplinglines.append("  connect("+sourceblock+"1_currentSensor."+sensorSinkport+", "+sinkblock+"1."+sinkport+");\n")
+                        couplinglines.append("  connect("+sourceblock+"1_currentSensor."+flowVar+", "+sourceblock+"_"+flowVar+"_Out);\n")
+                        #remove double entries in the portblocklines and couplinglines -> could happen if a component only has one port
+                        portblocklines = list(set(portblocklines))
+                        couplinglines = list(set(couplinglines))
+                    if sourceporttype == "PPMT":
+                        #Mechanics Translational: the connector is of type "Flange" and has the potential variable s (path) and the flow variable f (force)
+                        potVar = "s"
+                        flowVar = "f"
+                        #potential: path - append RealOutput blocks
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+sourceport+"_"+potVar+"_Out;\n")
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sinkblock+"_"+sinkport+"_"+potVar+"_Out;\n")
+                        #potential: path - append the couplings
+                        couplinglines.append("  connect("+sourceblock+"1."+sourceport+"."+potVar+", "+sourceblock+"_"+sourceport+"_"+potVar+"_Out);\n")
+                        couplinglines.append("  connect("+sinkblock+"1."+sinkport+"."+potVar+", "+sinkblock+"_"+sinkport+"_"+potVar+"_Out);\n")
+                        #flow: force - append a force sensor block and its RealOutput port
+                        portblocklines.append("  Modelica.Mechanics.Translational.Sensors.ForceSensor "+sourceblock+"1_forceSensor;\n")
+                        portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+flowVar+"_Out;\n")
+                        #flow: force - append the couplings - now two couplings with the force sensor in between and the coupling to the RealOutput
+                        ports = ["flange_a", "flange_b"]
+                        sensorSourceport = ports[ports.index(sourceport) - 1]
+                        sensorSinkport = sourceport
+                        couplinglines.append("  connect("+sourceblock+"1."+sourceport+", "+sourceblock+"1_forceSensor."+sensorSourceport+");\n")
+                        couplinglines.append("  connect("+sourceblock+"1_forceSensor."+sensorSinkport+", "+sinkblock+"1."+sinkport+");\n")
+                        couplinglines.append("  connect("+sourceblock+"1_forceSensor."+flowVar+", "+sourceblock+"_"+flowVar+"_Out);\n")
+                        #remove double entries in the portblocklines and couplinglines -> could happen if a component only has one port
+                        portblocklines = list(set(portblocklines))
+                        couplinglines = list(set(couplinglines))
 
         #now write in file
         fileobject = open(modelfile, "a")
