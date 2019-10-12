@@ -15,6 +15,7 @@ OpenModelica 1.12.0 and Dymola 2018.
 Furthermore it makes use of the FMU Compliance Checker developed by Modelon AB.
 
 EXECUTE
+
 Copy the directory SESMoPy in your home folder, e.g. C:\Users\<Username>
 (necessary for usage of Dymola as simulator, otherwise Dymola cannot simulate).
 The program can be executed from source. Python3 with PyQt5 needs to be installed and the
