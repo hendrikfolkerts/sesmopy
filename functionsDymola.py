@@ -84,9 +84,11 @@ class functionsDymola():
             #delete the mos script
             os.remove(scriptPathName)
             #delete the FMU
+            """
             for mfmu in modelFMUs:
                 newfmupath = os.path.join(os.path.splitext(mfmu)[0], os.path.basename(mfmu))
                 os.remove(newfmupath)
+            """
 
             #rename and rework the names in the imported .mo file
             newmodelbasefilespathname = []

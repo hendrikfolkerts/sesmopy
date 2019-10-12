@@ -89,9 +89,9 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
         modelCreated = i
         if modelCreated == 0:
             if self.calledFromUi:
-                QMessageBox.information(None, "Model(s) created", "The model(s) was/were created in the folder \"%s\" (a subdirectory of the folder in which \"%s\" lies)." % (self.modelfolderpathname, self.selectedfpesfile), QtWidgets.QMessageBox.Ok)
+                QMessageBox.information(None, "Model(s) created", "The model(s) was/were created in the folder \"%s\" (a subdirectory of the folder in which \"%s\" lies). In the <b>config.txt</b> file the model file(s) and the respective modelbase file(s) are listed." % (self.modelfolderpathname, self.selectedfpesfile), QtWidgets.QMessageBox.Ok)
             else:
-                print("OK - The model(s) was/were created in the \nMODELFOLDER: \"" + self.modelfolderpathname + "\"\nThis is a subdirectory of the folder in which \"" + self.selectedfpesfile + "\" lies.")
+                print("OK - The model(s) was/were created in the \nMODELFOLDER: \"" + self.modelfolderpathname + "\"\nThis is a subdirectory of the folder in which \"" + self.selectedfpesfile + "\" lies. In the config.txt file the model file(s) and the respective modelbase file(s) are listed.")
                 print("\n")
         elif modelCreated == 1:
             QMessageBox.warning(None, "Model(s) not created", "The model(s) could not be created. The simulator or interface is not supported. Please refer to the documentation for simulators and the interface.", QtWidgets.QMessageBox.Ok)
@@ -123,6 +123,11 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
         elif modelCreated == 10:
             QMessageBox.warning(None, "FMU(s) not created", "Please check the FPES and the created model which shall be translated to an FMU.", QtWidgets.QMessageBox.Ok)
             print("Not OK - FMU(s) could not be created of the model(s)! Please check the FPES and the created model which shall be translated to an FMU.")
+        elif modelCreated == 11:
+            if self.calledFromUi:
+                QMessageBox.information(None, "Created", "Created in the folder \"%s\" (a subdirectory of the folder in which \"%s\" lies)." % (self.modelfolderpathname, self.selectedfpesfile), QtWidgets.QMessageBox.Ok)
+            else:
+                print("OK - Created in the \nFOLDER: \"" + self.modelfolderpathname + "\"\nThis is a subdirectory of the folder in which \"" + self.selectedfpesfile + "\" lies.")
         #if called from ui, the build model button needs to be activated again and clear the status
         if self.calledFromUi:
             self.bbuildmodel.setEnabled(True)

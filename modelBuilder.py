@@ -54,7 +54,7 @@ class modelBuilder(QObject):
         ################################################################################################################
         #get the attributes of the nodes without MB-Attribute from the nodelist (they may be necessary for the simulator configuration)
         #the FPES defines the attributes necessary for the simulation run (defining the simulation method) and the attributes to vary
-        simulator = "not defined"   # Simulink or OpenModelica or Dymola
+        simulator = "not defined"   # Simulink or OpenModelica or Dymola or None
         interface = "native"        # native or FMI
         paramvary = []
         for nd in self.nodesWithoutMbAttribute:
@@ -148,6 +148,55 @@ class modelBuilder(QObject):
         #objectsvariations is a list with the links to the blocks and their parameterization
         #modelnames and objectsvariations correspond to each other - e.g. the first element in modelnames (a name of a model) has the blocks and their configurations as listed in objectsvariations
         #the same applies for all further elements in the lists
+
+
+        #for non-simulator, e.g. for the creation of software -> no attributes except for the MB attribute, no couplings
+        if simulator == "None":
+            self.statusUpdate.emit("Copy modelbase.")
+            # get the path and names of the modelbases -> they shall lie in the same directory as the FPES .jsonsestree file
+            mblinks = []
+            for ob in self.objects:  # get the filenames of the modelbases from the mb-attributes
+                mblinks.append(ob[1])
+
+            # copy the modelbase file(s) in the newly created folder, in which the models will be created
+            additionalFiles = []
+            for mblink in mblinks:
+                mbfile = os.path.join(self.fpesfilepath, mblink)
+                mbfilename = os.path.basename(mbfile)
+                newmodelbasefilepathname = os.path.join(self.modelfolderpathname, mbfilename)
+                try:
+                    shutil.copyfile(mbfile, newmodelbasefilepathname)
+                except:
+                    self.finished.emit(3)
+                    return 3
+
+                # copy other files needed (e.g. initScript.py file) in the modelfolder
+                for hfile in os.listdir(os.path.split(mbfile)[0]):
+                    if hfile.endswith(".py"):
+                        hfilepathname = os.path.join(os.path.split(mbfile)[0], hfile)
+                        newhfilepathname = os.path.join(self.modelfolderpathname, hfile)
+                        try:
+                            shutil.copyfile(hfilepathname, newhfilepathname)
+                            additionalFiles.append(newhfilepathname)
+                        except:
+                            self.finished.emit(3)
+                            return 3
+            additionalFiles = list(set(additionalFiles))
+
+            #execute the additional Python 3 files
+            system = platform.system()
+            if system == "Windows":
+                pythoncall = "python"
+            else:
+                pythoncall = "python3"
+            for addFile in additionalFiles:
+                subprocess.check_output([pythoncall, addFile])
+                os.remove(addFile)
+
+            self.finished.emit(11)
+            return 11
+        #end for non-simulator
+
 
         #define one variable needed for the configuration file
         fMUmodels = []
@@ -294,20 +343,11 @@ class modelBuilder(QObject):
                                                 linetext = linetext[:-2] + "("
                                                 atro = 0
                                                 while atro < len(obj[2]):
-                                                    # now insert the parameter in the text
-                                                    #adapt the syntax for OpenModelica
-                                                    addBracket = False
-                                                    if "_start" in obj[2][atro][0]:
-                                                        paramadapt = obj[2][atro][0].split("_start")
-                                                        if len(paramadapt) == 2:
-                                                            obj[2][atro][0] = "(start".join(paramadapt)
-                                                            addBracket = True
-                                                    linetext = linetext + obj[2][atro][0] + "=" + obj[2][atro][1]
-                                                    if addBracket:
-                                                        linetext = linetext + ")"
-                                                    # if there are more attributes, a comma is needed
-                                                    if atro < len(obj[2]) - 1:
-                                                        linetext = linetext + ","
+                                                    # now insert the parameter in the text, if it is not a start parameter for the block (start parameters are added in the model)
+                                                    if not "_start" in obj[2][atro][0]:
+                                                        if linetext[-1] != "(": # if there are already attributes, a comma is needed
+                                                            linetext = linetext + ","
+                                                        linetext = linetext + obj[2][atro][0] + "=" + obj[2][atro][1]
                                                     # next attribute
                                                     atro += 1
                                                 linetext = linetext + ");\n"
@@ -489,7 +529,7 @@ class modelBuilder(QObject):
                     return 10
 
                 for filename in os.listdir(self.modelfolderpathname):
-                    if not filename.endswith('.fmu'):
+                    if not (filename.endswith('.fmu') or filename.endswith('.mo')):
                         currentfile = os.path.join(self.modelfolderpathname, filename)
                         if not os.path.isdir(currentfile):
                             os.remove(currentfile)

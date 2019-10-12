@@ -34,9 +34,11 @@ class functionsOpenModelica():
             #delete the mos script
             os.remove(scriptPathName)
             #delete the FMU
+            """
             for mfmu in modelFMUs:
                 newfmupath = os.path.join(os.path.splitext(mfmu)[0], os.path.basename(mfmu))
                 os.remove(newfmupath)
+            """
 
             #rename and rework the names in the imported .mo file
             newmodelbasefilespathname = []
@@ -100,7 +102,25 @@ class functionsOpenModelica():
                 else:   #a model FMU shall be created of the components given in objects
                     type, ext = os.path.splitext(os.path.basename(ob[1]))
                     fileobject.write("  " + type + " " + blockname + "1(")
-                    #block parameters do not need to be written for the FMI interface, since the basic models (which can be FMUs) are preconfigured
+                    #the basic models (which can be FMUs) are preconfigured, but start parameters for a block need to be written -> in syntax for OpenModelica
+                    firstAttribute = True
+                    atro = 0
+                    while atro < len(ob[2]):
+                        if "_start" in ob[2][atro][0]:
+                            if not firstAttribute:  # if there are already attributes, a comma is needed
+                                fileobject.write(",")
+                            if firstAttribute:
+                                firstAttribute = False
+                            paramadapt = ob[2][atro][0].split("_start")
+                            addBracket = False
+                            if len(paramadapt) == 2:
+                                ob[2][atro][0] = "(start".join(paramadapt)
+                                addBracket = True
+                            fileobject.write(ob[2][atro][0] + "=" + ob[2][atro][1])
+                            if addBracket:
+                                fileobject.write(")")
+                        # next attribute
+                        atro += 1
                 #close parameters
                 fileobject.write(")")
                 #add placement information (all will be on each other) (without placement information, the objects are not shown, just in sourcecode)
@@ -118,7 +138,8 @@ class functionsOpenModelica():
         #for FMI some portblocks need to be added -> store all information in lists first
         portblocklines = []
         couplinglines = []
-        for cpl in couplings:
+        for cp in range(len(couplings)):
+            cpl = couplings[cp]
             sourceblock = cpl[0]
             sourceport = cpl[1].split(" / ")[0].strip()
             sourceporttype = cpl[1].split(" / ")[1].strip()
@@ -184,11 +205,44 @@ class functionsOpenModelica():
                         #potential: path - append the couplings
                         couplinglines.append("  connect("+sourceblock+"1."+sourceport+"."+potVar+", "+sourceblock+"_"+sourceport+"_"+potVar+"_Out);\n")
                         couplinglines.append("  connect("+sinkblock+"1."+sinkport+"."+potVar+", "+sinkblock+"_"+sinkport+"_"+potVar+"_Out);\n")
+                        # if a component has an open end, it is not in the couplings -> add the output for potential variables and its coupling
+                        # -> when a mechanics translational component has flange_a port, it has a flange_b port as well
+                        # -> only check when the last coupling is set
+                        ports = ["flange_a", "flange_b"]
+                        if cp == len(couplings) - 1:
+                            #get dictionary with the blocks and its ports
+                            blockports = {}
+                            for cplgs in couplings:
+                                soblock = cplgs[0]
+                                soport = cplgs[1].split(" / ")[0]
+                                soportindic = blockports.get(soblock)
+                                if soportindic is None:   #there is no entry of a port for the block already
+                                    blockports.update({soblock: [soport]})
+                                else:
+                                    blockports.update({soblock: soportindic+[soport]})
+                                siblock = cplgs[2]
+                                siport = cplgs[3].split(" / ")[0]
+                                siportindic = blockports.get(siblock)
+                                if siportindic is None:   #there is no entry of a port for the block already
+                                    blockports.update({siblock: [siport]})
+                                else:
+                                    blockports.update({siblock: siportindic+[siport]})
+                            #now all blocks and ports are in the blockports dictionary -> go through them and add port if necessary
+                            addports = []
+                            for block in blockports:
+                                por = blockports.get(block)
+                                if len(por) == 1 and por[0] in ports:
+                                    addport = ports[ports.index(por[0]) - 1]
+                                    addports.append([block, addport])
+                                    #blockports.update({block: por+[addport]})
+                            #now add the additional ports and the coupling
+                            for ap in addports:
+                                portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+ap[0]+"_"+ap[1]+"_"+potVar+"_Out;\n")
+                                couplinglines.append("  connect("+ap[0]+"1."+ap[1]+"."+potVar+", "+ap[0]+"_"+ap[1]+"_"+potVar+"_Out);\n")
                         #flow: force - append a force sensor block and its RealOutput port
                         portblocklines.append("  Modelica.Mechanics.Translational.Sensors.ForceSensor "+sourceblock+"1_forceSensor;\n")
                         portblocklines.append("  Modelica.Blocks.Interfaces.RealOutput "+sourceblock+"_"+flowVar+"_Out;\n")
                         #flow: force - append the couplings - now two couplings with the force sensor in between and the coupling to the RealOutput
-                        ports = ["flange_a", "flange_b"]
                         sensorSourceport = ports[ports.index(sourceport) - 1]
                         sensorSinkport = sourceport
                         couplinglines.append("  connect("+sourceblock+"1."+sourceport+", "+sourceblock+"1_forceSensor."+sensorSourceport+");\n")
