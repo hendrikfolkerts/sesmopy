@@ -167,7 +167,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
                 filestr = f.read()
                 f.close()
                 readJsonObj = readJson  #create an instance of the class readJson
-                okay, nodelist, sespes = readJsonObj.fromJSON(self, filestr)
+                okay, nodelist, sespes, sesvar = readJsonObj.fromJSON(self, filestr)
                 #only if the file is okay and an FPES
                 if okay and sespes[0][0] == "fpes" and len(nodelist) > 0:
                     #read the FPES file
@@ -189,6 +189,7 @@ class Main(QtWidgets.QMainWindow, Ui_MainWindow):
                         self.moBuObj.modelname = modelname
                         self.moBuObj.modelfolderpathname = self.modelfolderpathname
                         self.moBuObj.fpesfilepath = fpesfilepath
+                        self.moBuObj.sesvar = sesvar
 
                         #if called from ui: start the modelbuilder thread
                         #if called from shell: start the build function (not in an own thread)
