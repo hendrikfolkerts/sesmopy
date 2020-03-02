@@ -7,11 +7,15 @@ import shutil
 import subprocess
 import zipfile
 import xml.etree.ElementTree as ET
+import platform
 
 class functionsDymola():
 
     #create the FMUs as Dymola models (.mo)
     def importFMUs(self, modelFMUs):
+        #set the system
+        syst = platform.system()
+
         #move each FMU in an own directory
         for mfmu in modelFMUs:
             mofilepathname, file_extension = os.path.splitext(mfmu)
@@ -76,6 +80,8 @@ class functionsDymola():
                     mfmustr = mfmu.replace("/", "\\\\")  # "/" to "\\"
                     mfmustr = mfmustr.replace("\\", "\\\\")  # "\" to "\\"
                     mfmustr = mfmustr.replace("\\\\\\", "\\")  # "\\\" to "\"
+                    if syst != "Windows":
+                        mfmustr = mfmustr.replace("\\", "/")
                     impFMU.write('cd("'+os.path.splitext(mfmustr)[0]+'");\n')
                     impFMU.write('importFMU("'+os.path.basename(mfmu)+'");\n')
                 impFMU.write('Modelica.Utilities.System.exit();\n') #otherwise Dymola does not return

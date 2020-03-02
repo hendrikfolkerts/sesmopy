@@ -5,11 +5,15 @@ __author__ = 'Hendrik Folkerts'
 import os
 import shutil
 import subprocess
+import platform
 
 class functionsOpenModelica():
 
     #create the model FMUs as OpenModelica models (.mo)
     def importFMUs(self, modelFMUs):
+        #set the system
+        syst = platform.system()
+
         #move each FMU in an own directory
         for mfmu in modelFMUs:
             mofilepathname, file_extension = os.path.splitext(mfmu)
@@ -26,6 +30,8 @@ class functionsOpenModelica():
                     mfmustr = mfmu.replace("/", "\\\\")  # "/" to "\\"
                     mfmustr = mfmustr.replace("\\", "\\\\")  # "\" to "\\"
                     mfmustr = mfmustr.replace("\\\\\\", "\\")  # "\\\" to "\"
+                    if syst != "Windows":
+                        mfmustr = mfmustr.replace("\\", "/")
                     impFMU.write('cd("'+os.path.splitext(mfmustr)[0]+'");\n')
                     impFMU.write('importFMU("'+os.path.basename(mfmu)+'");\n')
                     impFMU.write('\n')

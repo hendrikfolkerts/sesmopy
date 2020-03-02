@@ -285,6 +285,9 @@ class modelBuilder(QObject):
                 self.finished.emit(6)
                 return 6
 
+            #set the system
+            syst = platform.system()
+
             #Configure basic models according to the objects (with their varying configurations) by going through each object of a variation, find its type in the respective modelbase or take the respective FMU,
             # copy the code to create an OpenModelica block (=basic model) with the name of the object or import the FMU into OpenModelica to create an OpenModelia block (=basic model), and configure it.
             #When the models for each variation are built and exported as FMU, do simulator specific steps.
@@ -398,14 +401,18 @@ class modelBuilder(QObject):
                                     newmodelbasefolderpathOm = newmodelbasefolderpath.replace("/", "\\\\")  # "/" to "\\"
                                     newmodelbasefolderpathOm = newmodelbasefolderpathOm.replace("\\", "\\\\")  # "\" to "\\"
                                     newmodelbasefolderpathOm = newmodelbasefolderpathOm.replace("\\\\\\", "\\")  # "\\\" to "\"
+                                    if syst != "Windows":
+                                        newmodelbasefolderpathOm = newmodelbasefolderpathOm.replace("\\", "/")
                                     impfile.write('cd("' + newmodelbasefolderpathOm + '");\n')
                                     impfile.write('importFMU("' + os.path.split(newfmulinkpath)[1] + '");\n')
                                     impfile.write('getErrorString();\n')
                                 # -> try to execute the created script for importing the FMU in OpenModelica
                                 self.statusUpdate.emit("FMI modelbuilding: Import nonconfigured FMU to OpenModelica and configure it (" + os.path.split(newfmulinkpath)[1] + ", variation " + str(i + 1) + ").")
                                 # if OpenModelica would not have been found, the program would have returned before (and this code would not have been reached)
-                                subprocess.check_output(["omc", importFMUScript], shell=True)
-
+                                if syst == "Windows":
+                                    subprocess.check_output(["omc", importFMUScript], shell=True)
+                                else:
+                                    subprocess.check_output(["omc" + " " + importFMUScript], shell=True)
                                 #delete the created .mos
                                 os.remove(os.path.join(newmodelbasefolderpath, "importFMU.mos"))
                                 #delete the FMU
@@ -477,6 +484,8 @@ class modelBuilder(QObject):
                         modelfolderpathnameOm = self.modelfolderpathname.replace("/", "\\\\")  # "/" to "\\"
                         modelfolderpathnameOm = modelfolderpathnameOm.replace("\\", "\\\\")  # "\" to "\\"
                         modelfolderpathnameOm = modelfolderpathnameOm.replace("\\\\\\", "\\")  # "\\\" to "\"
+                        if syst != "Windows":
+                            modelfolderpathnameOm = modelfolderpathnameOm.replace("\\", "/")
                         expfile.write('cd("' + modelfolderpathnameOm + '");\n')
                         expfile.write('loadModel(Modelica);\n')
                         expfile.write('getErrorString();\n')
@@ -495,7 +504,10 @@ class modelBuilder(QObject):
                     # -> try to execute the created script for exporting in OpenModelica (exit if OpenModelica could not be found)
                     self.statusUpdate.emit("FMI modelbuilding: Translate the whole model " + modelname + " as FMU (variation " + str(i + 1) + ").")
                     # if OpenModelica would not have been found, the program would have returned before (and this code would not have been reached)
-                    subprocess.check_output(["omc", exportModelAsFMUScript], shell=True)
+                    if syst == "Windows":
+                        subprocess.check_output(["omc", exportModelAsFMUScript], shell=True)
+                    else:
+                        subprocess.check_output(["omc" + " " + exportModelAsFMUScript], shell=True)
 
                     """
                     #delete all files of the FMUs except the FMUs itself
@@ -628,7 +640,13 @@ class modelBuilder(QObject):
     def executeFMUComplianceChecker(self, fmufile):
         curDir = os.path.dirname(os.path.abspath(__file__))
         syste = platform.system()
-        platf = os.environ['PROCESSOR_ARCHITECTURE']
+        if syste == "Windows":
+            platf = os.environ['PROCESSOR_ARCHITECTURE']
+        else:
+            if platform.machine().endswith('64'):
+                platf = "AMD64"
+            else:
+                platf = "x86"
         if syste in ["Windows", "Linux"]:
             args = ""
             if syste == "Windows":
@@ -642,13 +660,16 @@ class modelBuilder(QObject):
                 elif platf == "AMD64":  # 64bit
                     args = [os.path.join(curDir, "FMU_Compliance_Checker", "FMUChecker-2.0.4-linux64", "fmuCheck.linux64"), fmufile]
             if args != "":
-                fmuokaystr = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
-                fmuokaystr = fmuokaystr.decode()
-                if "0 warning(s) and error(s)" in fmuokaystr and "0 Warning(s)" in fmuokaystr and "0 Error(s)" in fmuokaystr:
-                    pass
-                else:
-                    self.statusUpdate.emit("The FMU " + os.path.basename(fmufile) + " did not pass the compliance check!")
-                    self.finished.emit(9)
-                    return 9
+                try:
+                    fmuokaystr = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
+                    fmuokaystr = fmuokaystr.decode()
+                    if "0 warning(s) and error(s)" in fmuokaystr and "0 Warning(s)" in fmuokaystr and "0 Error(s)" in fmuokaystr:
+                        pass
+                    else:
+                        self.statusUpdate.emit("The FMU " + os.path.basename(fmufile) + " did not pass the compliance check!")
+                        self.finished.emit(9)
+                        return 9
+                except:
+                    self.statusUpdate.emit("The FMU Compliance Checker could not be executed.")
         else:
             self.statusUpdate.emit("The FMU Compliance Checker cannot be executed on this system.")
