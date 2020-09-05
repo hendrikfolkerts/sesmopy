@@ -22,11 +22,11 @@ in Dymola otherwise).
 Make sure, that the command "omc" is on the path and the program is thus startable
 from the shell (needed for FMI model generation). If models using FMI model
 generation are built for Dymola, the command "dymola" has to be on the path as well.
-This is described in the documentation in detail.
-Open a shell and change with the cd command in the SESMoPy directory.
+This is described in the documentation in detail.  
 The program can be executed from source. Python3 with PyQt5 needs to be installed
-and the Python executable needs to be on the path. The program then can be started
-with the shell command:
+and the Python executable needs to be on the path. Open a shell and change with the
+cd command to the SESMoPy directory. The program then can be started with the shell
+command:
 - in Windows: python main.py
 - in Linux: python3 main.py
 
