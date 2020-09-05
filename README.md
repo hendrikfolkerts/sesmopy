@@ -20,9 +20,10 @@ Copy the directory SESMoPy in your home folder, e.g. C:\Users\\\<Username>
 (necessary if simulation models are built for Dymola, simulation cannot be executed 
 in Dymola otherwise).
 Make sure, that the command "omc" is on the path and the program is thus startable
-from the shell (needed for FMI model generation). If models using FMI model
-generation are built for Dymola, the command "dymola" has to be on the path as well.
-This is described in the documentation in detail.  
+from the shell (needed for model generation using the Functional Mock-up Interface
+(FMI)). If models using FMI model generation are built for Dymola, the command
+"dymola" has to be on the path as well. This is described in the documentation in
+detail.  
 The program can be executed from source. Python3 with PyQt5 needs to be installed
 and the Python executable needs to be on the path. Open a shell and change with the
 cd command to the SESMoPy directory. The program then can be started with the shell
@@ -36,8 +37,9 @@ in the program directory.
 CHANGELOG
 
 
-ToDo, Known Bugs, Notes
+KNOWN BUGS, NOTES, TODO
 
+- Usage of the Experimental Frame
 
 LICENSE
 
