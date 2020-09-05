@@ -5,7 +5,7 @@ Engineering and Automation (CEA) at Wismar University of Applied Sciences.
 The software implements a modelbuilder according to the System Entity
 Structure / Model Base (SES/MB) infrastructure introduced for automatic
 execution of simulation experiments. The focus of the software is the model
-generation for different modelbuilders.
+generation for different simulators.
 Please read the documentation for further information. A comprehensive
 introduction to the SES/MB theory is given in the documentation of the SES
 modeling tool SESToPy.
@@ -16,10 +16,17 @@ Furthermore it makes use of the FMU Compliance Checker developed by Modelon AB.
 
 EXECUTE
 
-Copy the directory SESMoPy in your home folder, e.g. C:\Users\<Username>
-(necessary for usage of Dymola as simulator, otherwise Dymola cannot simulate).
-The program can be executed from source. Python3 with PyQt5 needs to be installed and the
-program can be started with the command:
+Copy the directory SESMoPy in your home folder, e.g. C:\Users\\\<Username>
+(necessary if simulation models are built for Dymola, simulation cannot be executed 
+in Dymola otherwise).
+Make sure, that the command "omc" is on the path and the program is thus startable
+from the shell (needed for FMI model generation). If models using FMI model
+generation are built for Dymola, the command "dymola" has to be on the path as well.
+This is described in the documentation in detail.
+Open a shell and change with the cd command in the SESMoPy directory.
+The program can be executed from source. Python3 with PyQt5 needs to be installed
+and the Python executable needs to be on the path. The program then can be started
+with the shell command:
 - in Windows: python main.py
 - in Linux: python3 main.py
 
