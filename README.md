@@ -44,6 +44,9 @@ KNOWN BUGS, NOTES, TODO
 
 - Usage of the Experimental Frame
 
+- Simulink models can be nicely arranged with the Matlab command:
+Simulink.BlockDiagram.arrangeSystem('\<systemname\>');
+
 LICENSE
 
 This application is licensed under GNU GPLv3.
@@ -64,3 +67,7 @@ Folkerts, H., Pawletta, T., Deatcu, T. (2019). An Integrated Modeling,
 Simulation and Experimentation Environment in Python Based on SES/MB and DEVS.
 Proc. of the 2019 Summer Simulation Conference, ACM Digital Lib.,
 2019 July 22-24, Berlin, Germany, 12 pages.
+
+Folkerts, H., Pawletta, T., Deatcu, C. (2020). Model Generation for Multiple Simulators
+Using SES/MB and FMI. 25. ASIM Symposium Simulationstechnik (SST), Oct. 14. - 15.,
+Virtual Conference, Germany, 8 pages.
