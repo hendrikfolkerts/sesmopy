@@ -53,15 +53,15 @@ This application is licensed under GNU GPLv3.
 
 HOW TO CITE
 
-Folkerts, H., Deatcu, C., Pawletta, T., Hartmann, S. (2019). Python-Based eSES/MB
-Framework: Model Specification and Automatic Model Generation for Multiple Simulators.
-SNE - Simulation Notes Europe Journal, ARGESIM Pub. Vienna, SNE 29(4)2019, 207-215.
-(DOI: 10.11128/sne.29.tn.10497),(Selected EUROSIM 2019 Postconf. Publ.)
-
 Folkerts, H., Pawletta, T., Deatcu, C., and Hartmann, S. (2019). A Python Framework for
 Model Specification and Automatic Model Generation for Multiple Simulators. In: Proc. of
 ASIM Workshop 2019 - ARGESIM Report 57, ASIM Mitteilung AM 170. ARGESIM/ASIM Pub.
 TU Vienna, Austria, 02/2019, 69-75. (Print ISBN 978-3-901608-06-3)
+
+Folkerts, H., Deatcu, C., Pawletta, T., Hartmann, S. (2019). Python-Based eSES/MB
+Framework: Model Specification and Automatic Model Generation for Multiple Simulators.
+SNE - Simulation Notes Europe Journal, ARGESIM Pub. Vienna, SNE 29(4)2019, 207-215.
+(DOI: 10.11128/sne.29.tn.10497),(Selected EUROSIM 2019 Postconf. Publ.)
 
 Folkerts, H., Pawletta, T., Deatcu, T. (2019). An Integrated Modeling,
 Simulation and Experimentation Environment in Python Based on SES/MB and DEVS.
@@ -69,5 +69,6 @@ Proc. of the 2019 Summer Simulation Conference, ACM Digital Lib.,
 2019 July 22-24, Berlin, Germany, 12 pages.
 
 Folkerts, H., Pawletta, T., Deatcu, C. (2020). Model Generation for Multiple Simulators
-Using SES/MB and FMI. 25. ASIM Symposium Simulationstechnik (SST), Oct. 14. - 15.,
-Virtual Conference, Germany, 8 pages.
+Using SES/MB and FMI. 25. ASIM Symposium Simulationstechnik (SST), Oct. 14.-15.,
+Virtual Conference, Germany, ARGESIM Report 59 (ISBN 978-3-901608-93-3), p 13-20,
+DOI: 10.11128/arep.59.a59003 
