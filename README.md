@@ -68,7 +68,6 @@ Simulation and Experimentation Environment in Python Based on SES/MB and DEVS.
 Proc. of the 2019 Summer Simulation Conference, ACM Digital Lib.,
 2019 July 22-24, Berlin, Germany, 12 pages.
 
-Folkerts, H., Pawletta, T., Deatcu, C. (2020). Model Generation for Multiple Simulators
-Using SES/MB and FMI. 25. ASIM Symposium Simulationstechnik (SST), Oct. 14.-15.,
-Virtual Conference, Germany, ARGESIM Report 59 (ISBN 978-3-901608-93-3), p 13-20,
-DOI: 10.11128/arep.59.a59003 
+Folkerts, H., Deatcu, C., Pawletta, T. (2021). Model Generation for Multiple Simulators
+Using SES/MB and FMI. SNE - Simulation Notes Europe Journal, ARGESIM Pub. Vienna,
+SNE 31(1) 2021, 25-32. (DOI: 10.11128/sne.31.tn.10554), (Selected ASIM 2020 Postconf. Publ.)
